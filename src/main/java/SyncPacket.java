@@ -1,6 +1,27 @@
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class SyncPacket {
+    public Opcode getOp() {
+        return op;
+    }
+
+    public int getSeqNo() {
+        return seqNo;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public byte[] getPayload() {
+        return payload;
+    }
+
     public enum Opcode {
         ACK,
         JOIN,
@@ -15,7 +36,7 @@ public class SyncPacket {
     private int size;
     byte[] payload;
 
-    public SyncPacket(Opcode op, int seqNo, long timestamp, int size) {
+    public SyncPacket(Opcode op, int seqNo, long timestamp) {
         this.op = op;
         this.seqNo = seqNo;
         this.timestamp = timestamp;
@@ -53,7 +74,7 @@ public class SyncPacket {
         long timestamp = buffer.getLong();
         int size = buffer.getInt();
 
-        SyncPacket packet = new SyncPacket(op, seqNo, timestamp, size);
+        SyncPacket packet = new SyncPacket(op, seqNo, timestamp);
 
         if(size > 0) {
             byte[] payload = new byte[size];
@@ -62,5 +83,15 @@ public class SyncPacket {
         }
 
         return packet;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof SyncPacket))
+            return false;
+
+        SyncPacket other = (SyncPacket) o;
+        return this.op == other.getOp() && this.seqNo == other.getSeqNo() && this.timestamp == other.getTimestamp()
+                && this.size == other.getSize() && Arrays.equals(this.payload, other.getPayload());
     }
 }
