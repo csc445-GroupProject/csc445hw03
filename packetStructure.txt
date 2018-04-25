@@ -1,0 +1,7 @@
+opt codes:
+
+vote to skip -enum
+
+sequenceNumber(for ack) -enum 32 bit int
+(inc for each packet sent)
+
