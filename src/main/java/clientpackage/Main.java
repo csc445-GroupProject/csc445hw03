@@ -66,7 +66,7 @@ Client client;
 
             @Override
             public void handle(ActionEvent e) {
-                client = new Client();
+                client = new Client(userTextField.getText().trim());
                 if(client.initialConnection()){
                     dashboard(primaryStage);
                 } else {
