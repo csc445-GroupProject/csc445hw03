@@ -63,10 +63,10 @@ set CMD_LINE_ARGS=%*
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\csc445hw03.jar;%APP_HOME%\lib\guava-21.0.jar;%APP_HOME%\lib\commons-net-3.4.jar
+set CLASSPATH=%APP_HOME%\lib\csc445hw03.jar;%APP_HOME%\lib\guava-21.0.jar;%APP_HOME%\lib\commons-net-3.4.jar;%APP_HOME%\lib\jcommander-1.71.jar
 
 @rem Execute csc445hw03
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %CSC445HW03_OPTS%  -classpath "%CLASSPATH%" App %CMD_LINE_ARGS%
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %CSC445HW03_OPTS%  -classpath "%CLASSPATH%" edu.oswego.cs.ytsync.App %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell

@@ -1,6 +1,6 @@
-package clientpackage;
+package edu.oswego.cs.ytsync.client;
 
-import packetpackage.SyncPacket;
+import edu.oswego.cs.ytsync.common.SyncPacket;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

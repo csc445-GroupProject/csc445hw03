@@ -1,4 +1,4 @@
-package clientpackage;
+package edu.oswego.cs.ytsync.client;
 
 
 import javafx.application.Application;
@@ -18,7 +18,7 @@ import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-public class Main extends Application{
+public class ClientApp extends Application{
 Client client;
 
     public static void main(String args[]) {

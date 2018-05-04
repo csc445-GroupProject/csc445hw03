@@ -1,4 +1,4 @@
-package packetpackage;
+package edu.oswego.cs.ytsync.common;
 
 import java.nio.ByteBuffer;
 

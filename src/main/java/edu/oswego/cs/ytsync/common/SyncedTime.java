@@ -1,3 +1,5 @@
+package edu.oswego.cs.ytsync.common;
+
 import java.net.InetAddress;
 import java.util.Date;
 import org.apache.commons.net.ntp.NTPUDPClient;
