@@ -19,8 +19,13 @@ import java.util.Map;
 
 
 public class ClientApp extends Application {
-    Client client;
-    WebView ytWebView;
+    private Client client;
+
+    private WebView ytWebView;
+    private TextField chatField;
+    private TextArea chatArea;
+    private TextField queueField;
+    private ListView<String> queueView;
 
     public static void main(String args[]) {
         launch(args);
@@ -55,24 +60,24 @@ public class ClientApp extends Application {
         HBox queueInputBox = new HBox();
         queueInputBox.setSpacing(5);
 
-        TextField chatField = new TextField();
+        chatField = new TextField();
         HBox.setHgrow(chatField, Priority.ALWAYS);
         Button sendButton = new Button("Send");
         chatInputBox.getChildren().addAll(chatField, sendButton);
 
-        TextArea chatArea = new TextArea();
+        chatArea = new TextArea();
         chatArea.setEditable(false);
         chatArea.appendText("Welcome to chat!\n\n");
         VBox.setVgrow(chatArea, Priority.ALWAYS);
         chatBox.getChildren().addAll(chatArea, chatInputBox);
 
-        TextField queueField = new TextField();
+        queueField = new TextField();
         queueField.setPromptText("Enter a YouTube URL");
         HBox.setHgrow(queueField, Priority.ALWAYS);
         Button submitButton = new Button("Submit");
         queueInputBox.getChildren().addAll(queueField, submitButton);
 
-        ListView<String> queueView = new ListView<>();
+        queueView = new ListView<>();
         queueBox.getChildren().addAll(queueInputBox, queueView);
         upper.getChildren().addAll(ytWebView, queueBox);
 
@@ -89,19 +94,19 @@ public class ClientApp extends Application {
         });
 
         sendButton.setOnAction(e -> {
-            handleInput(chatArea, chatField);
+            handleInput();
         });
 
         chatField.setOnKeyPressed(ke -> {
             switch (ke.getCode()) {
                 case ENTER: {
-                    handleInput(chatArea, chatField);
+                    handleInput();
                 }
             }
         });
     }
 
-    private void handleInput(TextArea chatArea, TextField chatField) {
+    private void handleInput() {
         if(chatField.getText().startsWith("!seek ")) {
             double offset = Double.parseDouble(chatField.getText().substring(6));
             ytWebView.getEngine().executeScript(String.format("player.seekTo(%f)", offset));
