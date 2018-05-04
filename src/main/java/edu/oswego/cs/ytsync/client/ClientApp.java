@@ -1,106 +1,112 @@
 package edu.oswego.cs.ytsync.client;
 
 
+import edu.oswego.cs.ytsync.client.components.ConnectDialog;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 
-public class ClientApp extends Application{
-Client client;
+import java.util.Map;
+
+
+public class ClientApp extends Application {
+    Client client;
+    WebView ytWebView;
 
     public static void main(String args[]) {
-
         launch(args);
     }
 
     @Override
     public void start(Stage primaryStage) {
-        LoginScreen(primaryStage);
-    }
+        ytWebView = new WebView();
+        ytWebView.setPrefWidth(564);
+        ytWebView.setPrefHeight(344);
+        ytWebView.getEngine().load(this.getClass().getClassLoader().getResource("html/ytembed.html").toString());
 
-    /**
-     * This method Produces the login screen of the GUI
-     * @param primaryStage
-     */
-    public void LoginScreen(Stage primaryStage) {
-        primaryStage.setTitle("CSC 445 Playlist Syncing Application Login");
-        GridPane grid = new GridPane();
-        grid.setAlignment(Pos.CENTER);
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(25, 25, 25, 25));
+        VBox root = new VBox();
+        root.setPadding(new Insets(20, 20, 20, 20));
+        root.setSpacing(10);
 
-        Text scenetitle = new Text("Welcome");
-        scenetitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-        grid.add(scenetitle, 0, 0, 2, 1);
+        HBox upper = new HBox();
+        upper.setSpacing(10);
 
-        Label userName = new Label("User Name:");
-        grid.add(userName, 0, 1);
+        VBox chatBox = new VBox();
+        chatBox.setSpacing(5);
+        VBox.setVgrow(chatBox, Priority.ALWAYS);
 
-        TextField userTextField = new TextField();
-        grid.add(userTextField, 1, 1);
+        HBox chatInputBox = new HBox();
+        chatInputBox.setSpacing(5);
 
-        Button btn = new Button("Connect to Server");
-        HBox hbBtn = new HBox(10);
-        hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
-        hbBtn.getChildren().add(btn);
-        grid.add(hbBtn, 1, 4);
+        VBox queueBox = new VBox();
+        queueBox.setSpacing(5);
+        HBox.setHgrow(queueBox, Priority.ALWAYS);
+        queueBox.prefHeightProperty().bind(ytWebView.heightProperty());
 
-        final Text actiontarget = new Text();
-        grid.add(actiontarget, 1, 6);
+        HBox queueInputBox = new HBox();
+        queueInputBox.setSpacing(5);
 
-        btn.setOnAction(new EventHandler<ActionEvent>() {
+        TextField chatField = new TextField();
+        HBox.setHgrow(chatField, Priority.ALWAYS);
+        Button sendButton = new Button("Send");
+        chatInputBox.getChildren().addAll(chatField, sendButton);
 
-            @Override
-            public void handle(ActionEvent e) {
-                client = new Client(userTextField.getText().trim());
-                if(client.initialConnection()){
-                    dashboard(primaryStage);
-                } else {
-                    actiontarget.setFill(Color.FIREBRICK);
-                    actiontarget.setText("Connection Unsuccessful");
+        TextArea chatArea = new TextArea();
+        chatArea.setEditable(false);
+        chatArea.appendText("Welcome to chat!\n\n");
+        VBox.setVgrow(chatArea, Priority.ALWAYS);
+        chatBox.getChildren().addAll(chatArea, chatInputBox);
+
+        TextField queueField = new TextField();
+        queueField.setPromptText("Enter a YouTube URL");
+        HBox.setHgrow(queueField, Priority.ALWAYS);
+        Button submitButton = new Button("Submit");
+        queueInputBox.getChildren().addAll(queueField, submitButton);
+
+        ListView<String> queueView = new ListView<>();
+        queueBox.getChildren().addAll(queueInputBox, queueView);
+        upper.getChildren().addAll(ytWebView, queueBox);
+
+        root.getChildren().addAll(upper, chatBox);
+
+        Scene scene = new Scene(root, 960, 720);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("YTSync");
+        primaryStage.show();
+        ConnectDialog connectDialog = new ConnectDialog();
+        connectDialog.showAndWait().ifPresent(dialogMap -> {
+            String username = dialogMap.get("username");
+            client = new Client(username);
+        });
+
+        sendButton.setOnAction(e -> {
+            handleInput(chatArea, chatField);
+        });
+
+        chatField.setOnKeyPressed(ke -> {
+            switch (ke.getCode()) {
+                case ENTER: {
+                    handleInput(chatArea, chatField);
                 }
             }
         });
-
-        Scene scene = new Scene(grid, 300, 275);
-        primaryStage.setScene(scene);
-        primaryStage.show();
     }
 
-    public void dashboard(Stage primaryStage) {
-        primaryStage.setTitle("CSC 445 Playlist Syncing Application Dashboard");
-        GridPane grid = new GridPane();
-        grid.setAlignment(Pos.CENTER);
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(25, 25, 25, 25));
-
-        Text scenetitle = new Text("Choose a Room");
-        scenetitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-        grid.add(scenetitle, 0, 0, 2, 1);
-
-
-        final Text actiontarget = new Text();
-        grid.add(actiontarget, 1, 6);
-
-
-        Scene scene = new Scene(grid, 800, 500);
-        primaryStage.setScene(scene);
-        primaryStage.show();
+    private void handleInput(TextArea chatArea, TextField chatField) {
+        if(chatField.getText().startsWith("!seek ")) {
+            double offset = Double.parseDouble(chatField.getText().substring(6));
+            ytWebView.getEngine().executeScript(String.format("player.seekTo(%f)", offset));
+        }
+        chatArea.appendText(String.format("%s: %s\n", client.getUsername(), chatField.getText().trim()));
+        chatField.clear();
     }
-
 }

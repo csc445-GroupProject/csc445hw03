@@ -14,12 +14,15 @@ public class Client {
     private DataOutputStream out;
     private String serverName;
     private int port;
-    private String userName;
+    private String username;
 
-    Client(String userName){
-        userName = this.userName;
+    Client(String username){
+        this.username = username;
         serverName = "pi";
         port = 2706;
+    }
+
+    public void connect() {
         try {
             connectionSocket = new Socket(serverName, port);
         } catch(IOException e) {
@@ -30,6 +33,10 @@ public class Client {
         } catch (IOException e) {
             System.out.println("Input Stream was not instantiated");
         }
+    };
+
+    public String getUsername() {
+        return username;
     }
 
     /**
@@ -38,8 +45,8 @@ public class Client {
      */
     public boolean initialConnection() {
         SyncPacket connectionPacket = new SyncPacket(SyncPacket.Opcode.JOIN, 0, System.nanoTime());
-        if(userName != null) {
-            connectionPacket.setPayload(userName.getBytes());
+        if(username != null) {
+            connectionPacket.setPayload(username.getBytes());
         }
         return false;
     }
