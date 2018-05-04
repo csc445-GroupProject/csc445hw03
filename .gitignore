@@ -49,7 +49,7 @@ crashlytics-build.properties
 fabric.properties
 
 # Gradle
-.gradle/
+.gradle
 /build/
 
 # Ignore Gradle GUI config
