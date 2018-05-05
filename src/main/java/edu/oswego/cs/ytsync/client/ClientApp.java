@@ -1,6 +1,10 @@
 package edu.oswego.cs.ytsync.client;
 
 
+import com.sapher.youtubedl.YoutubeDL;
+import com.sapher.youtubedl.YoutubeDLException;
+import com.sapher.youtubedl.YoutubeDLRequest;
+import com.sapher.youtubedl.YoutubeDLResponse;
 import edu.oswego.cs.ytsync.client.components.ConnectDialog;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -9,20 +13,30 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Map;
+import java.util.Scanner;
 
 
 public class ClientApp extends Application {
     private Client client;
 
-    private WebView ytWebView;
+    //private WebView ytWebView;
     private TextField chatField;
     private TextArea chatArea;
     private TextField queueField;
     private ListView<String> queueView;
+    MediaPlayer player;
+    MediaView playerView;
 
     public static void main(String args[]) {
         launch(args);
@@ -30,14 +44,19 @@ public class ClientApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        ytWebView = new WebView();
-        ytWebView.managedProperty().bind(ytWebView.visibleProperty());
-        ytWebView.setOnMouseClicked(me -> {
-            System.out.println(ytWebView.getEngine().executeScript("player.getCurrentTime()"));
-        });
-        ytWebView.setPrefWidth(644);
-        ytWebView.setPrefHeight(394);
-        ytWebView.getEngine().load(this.getClass().getClassLoader().getResource("html/ytembed.html").toString());
+//        ytWebView = new WebView();
+//        ytWebView.managedProperty().bind(ytWebView.visibleProperty());
+//        ytWebView.setOnMouseClicked(me -> {
+//            System.out.println(ytWebView.getEngine().executeScript("player.getCurrentTime()"));
+//        });
+//        ytWebView.setPrefWidth(644);
+//        ytWebView.setPrefHeight(394);
+//        ytWebView.getEngine().load(this.getClass().getClassLoader().getResource("html/ytembed.html").toString());
+
+        player = new MediaPlayer(new Media("https://r4---sn-vgqsrn7d.googlevideo.com/videoplayback?dur=212.091&fexp=23724337&ms=au%2Conr&mv=m&mt=1525493626&mn=sn-vgqsrn7d%2Csn-ab5szn7e&source=youtube&mm=31%2C26&c=WEB&ratebypass=yes&sparams=dur%2Cei%2Cgcr%2Cid%2Cinitcwndbps%2Cip%2Cipbits%2Citag%2Clmt%2Cmime%2Cmm%2Cmn%2Cms%2Cmv%2Cpl%2Cratebypass%2Crequiressl%2Csource%2Cexpire&id=o-AALJX33wUTjZWAZxlXJnB8gDONcp2JBMARNBGeo1Gxg6&initcwndbps=3143750&ip=129.3.140.49&ei=0i_tWtvwEsXlDbe3ktgG&requiressl=yes&pl=16&gcr=us&fvip=4&expire=1525515314&lmt=1518411497890374&itag=22&key=yt6&mime=video%2Fmp4&ipbits=0&signature=B1BCA2F6ADE16F7359F5BB1FFC59A3C624FBAD2F.B53655A6FE81FC5C1B5E3B4290968A0E7194185C"));
+        playerView = new MediaView(player);
+        playerView.managedProperty().bind(playerView.visibleProperty());
+        HBox.setHgrow(playerView, Priority.ALWAYS);
 
         VBox root = new VBox();
 
@@ -45,6 +64,7 @@ public class ClientApp extends Application {
         VBox.setVgrow(uiBox, Priority.ALWAYS);
         uiBox.setPadding(new Insets(20, 20, 20, 20));
         uiBox.setSpacing(10);
+        playerView.fitHeightProperty().bind(root.heightProperty().multiply(.50));
 
         MenuBar menuBar = new MenuBar();
         Menu viewMenu = new Menu("View");
@@ -54,7 +74,7 @@ public class ClientApp extends Application {
         menuBar.getMenus().addAll(viewMenu);
         root.getChildren().add(menuBar);
 
-        ytWebView.visibleProperty().bind(toggleVideo.selectedProperty());
+        playerView.visibleProperty().bind(toggleVideo.selectedProperty());
 
         HBox upper = new HBox();
         upper.setSpacing(10);
@@ -69,7 +89,7 @@ public class ClientApp extends Application {
         VBox queueBox = new VBox();
         queueBox.setSpacing(5);
         HBox.setHgrow(queueBox, Priority.ALWAYS);
-        queueBox.prefHeightProperty().bind(ytWebView.heightProperty());
+        //queueBox.prefHeightProperty().bind(playerView.fitHeightProperty());
 
         HBox queueInputBox = new HBox();
         queueInputBox.setSpacing(5);
@@ -88,12 +108,13 @@ public class ClientApp extends Application {
         queueField = new TextField();
         queueField.setPromptText("Enter a YouTube URL");
         HBox.setHgrow(queueField, Priority.ALWAYS);
-        Button submitButton = new Button("Submit");
+        Button submitButton = new Button("Add");
         queueInputBox.getChildren().addAll(queueField, submitButton);
 
         queueView = new ListView<>();
+        VBox.setVgrow(queueView, Priority.ALWAYS);
         queueBox.getChildren().addAll(queueInputBox, queueView);
-        upper.getChildren().addAll(ytWebView, queueBox);
+        upper.getChildren().addAll(playerView, queueBox);
 
         uiBox.getChildren().addAll(upper, chatBox);
         root.getChildren().add(uiBox);
@@ -102,6 +123,7 @@ public class ClientApp extends Application {
         primaryStage.setScene(scene);
         primaryStage.setTitle("YTSync");
         primaryStage.show();
+        //player.play();
         ConnectDialog connectDialog = new ConnectDialog();
         connectDialog.showAndWait().ifPresent(dialogMap -> {
             String username = dialogMap.get("username");
@@ -121,14 +143,27 @@ public class ClientApp extends Application {
         });
 
         submitButton.setOnAction(e -> {
-            ytWebView.getEngine().executeScript("player.loadVideoById(\"7tp4hJvSIlE\")");
+            YoutubeDLRequest request = new YoutubeDLRequest(queueField.getText().trim());
+            request.setOption("format", "mp4");
+            request.setOption("get-url");
+            try {
+                player.stop();
+                YoutubeDLResponse response = YoutubeDL.execute(request);
+                String url = response.getOut().trim();
+                player.dispose();
+                player = new MediaPlayer(new Media(url));
+                playerView.setMediaPlayer(player);
+                player.play();
+            } catch (YoutubeDLException e1) {
+                e1.printStackTrace();
+            }
         });
     }
 
     private void handleInput() {
         if(chatField.getText().startsWith("!seek ")) {
             double offset = Double.parseDouble(chatField.getText().substring(6));
-            ytWebView.getEngine().executeScript(String.format("player.seekTo(%f)", offset));
+            player.seek(Duration.seconds(offset));
         }
         chatArea.appendText(String.format("%s: %s\n", client.getUsername(), chatField.getText().trim()));
         chatField.clear();
