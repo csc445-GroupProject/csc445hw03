@@ -5,10 +5,7 @@ import edu.oswego.cs.ytsync.client.components.ConnectDialog;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -34,13 +31,30 @@ public class ClientApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         ytWebView = new WebView();
-        ytWebView.setPrefWidth(564);
-        ytWebView.setPrefHeight(344);
+        ytWebView.managedProperty().bind(ytWebView.visibleProperty());
+        ytWebView.setOnMouseClicked(me -> {
+            System.out.println(ytWebView.getEngine().executeScript("player.getCurrentTime()"));
+        });
+        ytWebView.setPrefWidth(644);
+        ytWebView.setPrefHeight(394);
         ytWebView.getEngine().load(this.getClass().getClassLoader().getResource("html/ytembed.html").toString());
 
         VBox root = new VBox();
-        root.setPadding(new Insets(20, 20, 20, 20));
-        root.setSpacing(10);
+
+        VBox uiBox = new VBox();
+        VBox.setVgrow(uiBox, Priority.ALWAYS);
+        uiBox.setPadding(new Insets(20, 20, 20, 20));
+        uiBox.setSpacing(10);
+
+        MenuBar menuBar = new MenuBar();
+        Menu viewMenu = new Menu("View");
+        CheckMenuItem toggleVideo = new CheckMenuItem("Show Video");
+        toggleVideo.setSelected(true);
+        viewMenu.getItems().addAll(toggleVideo);
+        menuBar.getMenus().addAll(viewMenu);
+        root.getChildren().add(menuBar);
+
+        ytWebView.visibleProperty().bind(toggleVideo.selectedProperty());
 
         HBox upper = new HBox();
         upper.setSpacing(10);
@@ -81,7 +95,8 @@ public class ClientApp extends Application {
         queueBox.getChildren().addAll(queueInputBox, queueView);
         upper.getChildren().addAll(ytWebView, queueBox);
 
-        root.getChildren().addAll(upper, chatBox);
+        uiBox.getChildren().addAll(upper, chatBox);
+        root.getChildren().add(uiBox);
 
         Scene scene = new Scene(root, 960, 720);
         primaryStage.setScene(scene);
@@ -103,6 +118,10 @@ public class ClientApp extends Application {
                     handleInput();
                 }
             }
+        });
+
+        submitButton.setOnAction(e -> {
+            ytWebView.getEngine().executeScript("player.loadVideoById(\"7tp4hJvSIlE\")");
         });
     }
 
