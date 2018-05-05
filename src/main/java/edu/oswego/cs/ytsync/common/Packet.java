@@ -27,7 +27,6 @@ public class Packet {
         byte opOrd = buffer.get();
         Opcode op = Opcode.values()[(int) opOrd];
 
-        int seqNo = buffer.getInt();
         long timestamp = buffer.getLong();
         int size = buffer.getInt();
 
