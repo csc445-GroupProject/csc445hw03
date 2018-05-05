@@ -16,7 +16,7 @@ public class Packet {
     public Packet(Opcode op, long timestamp) {
         this.op = op;
         this.timestamp = timestamp;
-        size = 0;
+        size = 72;
         payload = null;
     }
 
@@ -63,7 +63,7 @@ public class Packet {
 
     public void setPayload(byte[] payload) {
         this.payload = payload;
-        this.size = payload.length;
+        this.size = 72 + payload.length;
     }
 
     public byte[] toByteArray() {

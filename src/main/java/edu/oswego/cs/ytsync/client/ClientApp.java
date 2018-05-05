@@ -16,16 +16,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
-import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Map;
-import java.util.Scanner;
-
 
 public class ClientApp extends Application {
     private Client client;
@@ -53,8 +47,7 @@ public class ClientApp extends Application {
 //        ytWebView.setPrefHeight(394);
 //        ytWebView.getEngine().load(this.getClass().getClassLoader().getResource("html/ytembed.html").toString());
 
-        player = new MediaPlayer(new Media("https://r4---sn-vgqsrn7d.googlevideo.com/videoplayback?dur=212.091&fexp=23724337&ms=au%2Conr&mv=m&mt=1525493626&mn=sn-vgqsrn7d%2Csn-ab5szn7e&source=youtube&mm=31%2C26&c=WEB&ratebypass=yes&sparams=dur%2Cei%2Cgcr%2Cid%2Cinitcwndbps%2Cip%2Cipbits%2Citag%2Clmt%2Cmime%2Cmm%2Cmn%2Cms%2Cmv%2Cpl%2Cratebypass%2Crequiressl%2Csource%2Cexpire&id=o-AALJX33wUTjZWAZxlXJnB8gDONcp2JBMARNBGeo1Gxg6&initcwndbps=3143750&ip=129.3.140.49&ei=0i_tWtvwEsXlDbe3ktgG&requiressl=yes&pl=16&gcr=us&fvip=4&expire=1525515314&lmt=1518411497890374&itag=22&key=yt6&mime=video%2Fmp4&ipbits=0&signature=B1BCA2F6ADE16F7359F5BB1FFC59A3C624FBAD2F.B53655A6FE81FC5C1B5E3B4290968A0E7194185C"));
-        playerView = new MediaView(player);
+        playerView = new MediaView();
         playerView.managedProperty().bind(playerView.visibleProperty());
         HBox.setHgrow(playerView, Priority.ALWAYS);
 
@@ -127,7 +120,15 @@ public class ClientApp extends Application {
         ConnectDialog connectDialog = new ConnectDialog();
         connectDialog.showAndWait().ifPresent(dialogMap -> {
             String username = dialogMap.get("username");
-            client = new Client(username);
+            String server = dialogMap.get("server");
+            int port = Integer.parseInt(dialogMap.get("port"));
+            try {
+                client = new Client(server, port, username);
+                new Thread(client).start();
+            } catch (IOException e) {
+                Alert errAlert = new Alert(Alert.AlertType.ERROR, "Could not connect to server.");
+                errAlert.showAndWait();
+            }
         });
 
         sendButton.setOnAction(e -> {
@@ -147,10 +148,12 @@ public class ClientApp extends Application {
             request.setOption("format", "mp4");
             request.setOption("get-url");
             try {
-                player.stop();
+                if(player != null)
+                    player.stop();
                 YoutubeDLResponse response = YoutubeDL.execute(request);
                 String url = response.getOut().trim();
-                player.dispose();
+                if(player != null)
+                    player.dispose();
                 player = new MediaPlayer(new Media(url));
                 playerView.setMediaPlayer(player);
                 player.play();

@@ -1,8 +1,8 @@
 package edu.oswego.cs.ytsync.common;
 
-public class JoinPacket extends Packet{
-    public JoinPacket(long timestamp, String username) {
-        super(Opcode.JOIN, timestamp);
+public class ConnectPacket extends Packet{
+    public ConnectPacket(long timestamp, String username) {
+        super(Opcode.CONNECT, timestamp);
         this.setPayload(username.getBytes());
     }
 

@@ -4,11 +4,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class JoinPacketTest {
+public class ConnectPacketTest {
 
     @Test
     public void getUsername() {
-        JoinPacket packet = new JoinPacket(System.currentTimeMillis(), "xXlimp_bizkitXx");
+        ConnectPacket packet = new ConnectPacket(System.currentTimeMillis(), "xXlimp_bizkitXx");
         assertEquals("xXlimp_bizkitXx", packet.getUsername());
     }
 }

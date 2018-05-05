@@ -37,8 +37,8 @@ class ClientHandler extends Thread {
 			Packet incomingPacket = Packet.fromByteArray(packetBuffer);
 			Opcode operation = incomingPacket.getOp();
 			switch(operation) {
-				case JOIN: {
-                    JoinPacket joinPacket = (JoinPacket) incomingPacket;
+				case CONNECT: {
+                    ConnectPacket connectPacket = (ConnectPacket) incomingPacket;
                     break;
                 }
 				case ADD_QUEUE: {
