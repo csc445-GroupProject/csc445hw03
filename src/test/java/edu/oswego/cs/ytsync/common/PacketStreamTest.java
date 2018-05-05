@@ -32,6 +32,7 @@ public class PacketStreamTest {
 
         List<Packet> recvPackets = new ArrayList<>();
         PacketStream ps = new PacketStream(new DataInputStream(client.getInputStream()));
+        ps.bufferPackets();
         for(int i = 0; i < 4; i++) {
             recvPackets.add(ps.next());
         }

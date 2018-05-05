@@ -17,7 +17,7 @@ public class PacketStream {
         bufferedPackets = new ArrayDeque<>();
     }
 
-    private void bufferPackets() throws IOException {
+    public void bufferPackets() throws IOException {
         byte[] readBytes = new byte[16384];
         int remaining = in.read(readBytes);
         buffer.put(readBytes);
@@ -40,23 +40,10 @@ public class PacketStream {
     }
 
     public boolean hasNext() {
-        try {
-            bufferPackets();
-        } catch (IOException e) {
-        }
-
         return !bufferedPackets.isEmpty();
     }
 
     public Packet next() {
-        do {
-            try {
-                bufferPackets();
-            } catch (IOException e) {
-                break;
-            }
-        } while (bufferedPackets.isEmpty());
-
         return bufferedPackets.poll();
     }
 }
