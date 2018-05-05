@@ -12,7 +12,7 @@ public class QueueUpdatePacket extends Packet{
         DataOutputStream payloadOutputStream = new DataOutputStream(byteOutputStream);
 
         try {
-            payloadOutputStream.write(ids.size());
+            payloadOutputStream.writeInt(ids.size());
 
             for(String id : ids) {
                 payloadOutputStream.writeUTF(id);

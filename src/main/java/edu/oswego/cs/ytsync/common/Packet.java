@@ -1,5 +1,9 @@
 package edu.oswego.cs.ytsync.common;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -63,17 +67,22 @@ public class Packet {
     }
 
     public byte[] toByteArray() {
-        ByteBuffer buffer = ByteBuffer.allocate(1400);
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        DataOutputStream outStream = new DataOutputStream(byteStream);
 
-        buffer.put((byte) op.ordinal());
-        buffer.putLong(timestamp);
+        try {
+            outStream.writeByte((byte) op.ordinal());
+            outStream.writeLong(timestamp);
 
-        if (payload != null) {
-            buffer.putInt(size);
-            buffer.put(payload);
+            if (payload != null) {
+                outStream.writeInt(size);
+                outStream.write(payload);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        return buffer.array();
+        return byteStream.toByteArray();
     }
 
     @Override
