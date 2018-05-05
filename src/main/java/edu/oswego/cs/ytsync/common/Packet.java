@@ -8,6 +8,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class Packet {
+    private final static int HEADER_SIZE = 13;
+
     private byte[] payload;
     private Opcode op;
     private long timestamp;
@@ -16,7 +18,7 @@ public class Packet {
     public Packet(Opcode op, long timestamp) {
         this.op = op;
         this.timestamp = timestamp;
-        size = 72;
+        size = HEADER_SIZE;
         payload = null;
     }
 
@@ -26,18 +28,17 @@ public class Packet {
     }
 
     public static Packet fromByteArray(byte[] a) {
-        ByteBuffer buffer = ByteBuffer.wrap(a);
+        ByteBuffer buffer = ByteBuffer.wrap(a);;
 
+        int size = buffer.getInt();
         byte opOrd = buffer.get();
         Opcode op = Opcode.values()[(int) opOrd];
-
         long timestamp = buffer.getLong();
-        int size = buffer.getInt();
 
         Packet packet = new Packet(op, timestamp);
 
-        if (size > 0) {
-            byte[] payload = new byte[size];
+        if (size > HEADER_SIZE) {
+            byte[] payload = new byte[size - HEADER_SIZE];
             buffer.get(payload);
             packet.setPayload(payload);
         }
@@ -63,7 +64,7 @@ public class Packet {
 
     public void setPayload(byte[] payload) {
         this.payload = payload;
-        this.size = 72 + payload.length;
+        this.size = HEADER_SIZE + payload.length;
     }
 
     public byte[] toByteArray() {
@@ -71,11 +72,11 @@ public class Packet {
         DataOutputStream outStream = new DataOutputStream(byteStream);
 
         try {
+            outStream.writeInt(size);
             outStream.writeByte((byte) op.ordinal());
             outStream.writeLong(timestamp);
 
             if (payload != null) {
-                outStream.writeInt(size);
                 outStream.write(payload);
             }
         } catch (IOException e) {
@@ -83,6 +84,10 @@ public class Packet {
         }
 
         return byteStream.toByteArray();
+    }
+
+    public ByteBuffer toByteBuffer() {
+        return ByteBuffer.wrap(toByteArray());
     }
 
     @Override
