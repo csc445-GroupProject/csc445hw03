@@ -1,6 +1,7 @@
 package edu.oswego.cs.ytsync.client;
 
-import edu.oswego.cs.ytsync.common.SyncPacket;
+import edu.oswego.cs.ytsync.common.Opcode;
+import edu.oswego.cs.ytsync.common.Packet;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -44,7 +45,7 @@ public class Client {
      * @return
      */
     public boolean initialConnection() {
-        SyncPacket connectionPacket = new SyncPacket(SyncPacket.Opcode.JOIN, 0, System.nanoTime());
+        Packet connectionPacket = new Packet(Opcode.JOIN, System.nanoTime());
         if(username != null) {
             connectionPacket.setPayload(username.getBytes());
         }

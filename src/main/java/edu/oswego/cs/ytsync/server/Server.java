@@ -6,12 +6,15 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import edu.oswego.cs.ytsync.common.*;
 
 public class Server {
 
 	private final static int port = 2706;
+	private static List<String> videoQueue;
 
 	public static void main(String args[]) throws IOException {
 
@@ -19,6 +22,7 @@ public class Server {
 		int clients = 0;
 		int rooms = 0;
 		long timestamp;
+		videoQueue = new ArrayList<>();
 		while (true) {
 			//Client first connects to the server
 			Socket client = host.accept(); 
@@ -45,15 +49,11 @@ public class Server {
 			}, "Client: " + clients).start();
 			timestamp = System.nanoTime();
 			
-			//send Ack packet with room info and timestamp
-			//Currently only adding room number to payload **and not sure wat do with seqNum
-			SyncPacket firstACK = new SyncPacket(SyncPacket.Opcode.ACK, 0, timestamp);
-			ByteBuffer tempBuf = ByteBuffer.allocate(1400);
-			tempBuf.put((byte)rooms);
-			firstACK.setPayload(tempBuf.array());
+			// Send initial video queue
+			QueueUpdatePacket queueUpdatePacket = new QueueUpdatePacket(timestamp, videoQueue);
 			
-			//Send packet ACK packet to client
-			dout.write((firstACK).toByteArray());
+			//Send initial queue to client
+			dout.write((queueUpdatePacket).toByteArray());
 			//Now we deal with the client on the seperate thread
 			
 		}
