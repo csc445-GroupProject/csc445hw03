@@ -55,8 +55,8 @@ jar {
     }
 }
 
-sourceCompatibility = 1.9
-targetCompatibility = 1.9
+sourceCompatibility = 1.10
+targetCompatibility = 1.10
 
 // Define the main class for the application
 mainClassName = 'edu.oswego.cs.ytsync.App'
