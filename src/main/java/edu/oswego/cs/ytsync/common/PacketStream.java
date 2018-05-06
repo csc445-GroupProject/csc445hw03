@@ -11,7 +11,7 @@ public class PacketStream {
     private DataInputStream in;
     private byte[] buff;
     private ByteBuffer buffer;
-    private int index;
+    private int remaining;
 
     public PacketStream(DataInputStream in) {
         this.in = in;
@@ -23,7 +23,7 @@ public class PacketStream {
     public void bufferPackets() {
         try {
             if(in.available() > 0) {
-                int remaining = in.read(buff, buffer.position(), buff.length - buffer.position());
+                remaining += in.read(buff, buffer.position(), buff.length - buffer.position());
                 while (remaining > 4) {
                     int size = buffer.getInt(0);
                     if (remaining >= size) {

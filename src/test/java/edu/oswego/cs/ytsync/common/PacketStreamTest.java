@@ -26,7 +26,7 @@ public class PacketStreamTest {
         List<Packet> sendPackets = new ArrayList<>();
         Thread sendThread = new Thread(() -> {
             try {
-                for (int i = 0; i < 10000; i++) {
+                for (int i = 0; i < 100000; i++) {
                     sendPackets.add(new Packet(Opcode.CONNECT, System.nanoTime(), "hello".getBytes()));
                     host.getOutputStream().write(sendPackets.get(i).toByteArray());
                     host.getOutputStream().flush();
@@ -39,7 +39,7 @@ public class PacketStreamTest {
         List<Packet> recvPackets = new ArrayList<>();
         PacketStream ps = new PacketStream(new DataInputStream(client.getInputStream()));
         Thread recvThread = new Thread(() -> {
-           for(int i = 0; i < 10000; i++) {
+           for(int i = 0; i < 100000; i++) {
                while (!ps.hasNext())
                    ps.bufferPackets();
 
