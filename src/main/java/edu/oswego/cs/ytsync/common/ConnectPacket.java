@@ -6,6 +6,10 @@ public class ConnectPacket extends Packet{
         this.setPayload(username.getBytes());
     }
 
+    public ConnectPacket(Packet p) {
+        super(p.getOp(), p.getTimestamp(), p.getPayload());
+    }
+
     public String getUsername() {
         return new String(getPayload());
     }

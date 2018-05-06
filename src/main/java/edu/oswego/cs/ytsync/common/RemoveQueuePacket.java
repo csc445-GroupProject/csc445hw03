@@ -6,6 +6,10 @@ public class RemoveQueuePacket extends Packet {
         this.setPayload(id.getBytes());
     }
 
+    public RemoveQueuePacket(Packet p) {
+        super(p.getOp(), p.getTimestamp(), p.getPayload());
+    }
+
     public String getId() {
         return new String(getPayload());
     }

@@ -24,6 +24,10 @@ public class QueueUpdatePacket extends Packet{
         }
     }
 
+    public QueueUpdatePacket(Packet p) {
+        super(p.getOp(), p.getTimestamp(), p.getPayload());
+    }
+
     List<String> getIds() throws IOException{
         ByteArrayInputStream byteInputStream = new ByteArrayInputStream(getPayload());
         DataInputStream listInputStream = new DataInputStream(byteInputStream);
