@@ -1,21 +1,35 @@
 package edu.oswego.cs.ytsync.server;
 
+import edu.oswego.cs.ytsync.Client;
 import edu.oswego.cs.ytsync.common.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.PseudoColumnUsage;
 
-class ClientHandler extends Thread {
+public class ClientHandler implements Runnable {
 	final DataOutputStream dout;
 	final DataInputStream din;
 	final Socket socket;
+	//final Client client;
+	final PacketStream ps;
 
-	public ClientHandler(Socket socket, DataInputStream din, DataOutputStream dout) {
+	public ClientHandler(Socket socket) throws IOException{
+		//this.client = client;
 		this.socket = socket;
-		this.din = din;
-		this.dout = dout;
+		this.din = new DataInputStream(socket.getInputStream());
+		this.dout = new DataOutputStream(socket.getOutputStream());
+		this.ps = new PacketStream(din);
+	}
+	
+	public DataInputStream getDataInputStream() {
+		return this.din;
+	}
+	
+	public DataOutputStream getDataOutputStream() {
+		return this.dout;
 	}
 
 	public Packet readPacket(byte[] a) {
@@ -25,29 +39,47 @@ class ClientHandler extends Thread {
 
 	@Override
 	public void run() {
-		//Wait for client response
+		//client connects, exchange ConnectPacket
+		//First recieve
+
 		while (true) {
-			byte[] packetBuffer = new byte[1400];
+			System.out.println("ayaya");
+			byte[] packetBuffer = new byte[2400];
 			try {
 				din.read(packetBuffer);
 			} catch(IOException e) {
-				System.out.println("Cant read buffer");
+				System.out.println("Cant read buffer: total" + (10000 - packetBuffer.length));
 			}
 			//recieve, decode, and read packet from client
-			Packet incomingPacket = Packet.fromByteArray(packetBuffer);
-			Opcode operation = incomingPacket.getOp();
+			Packet request = Packet.fromByteArray(packetBuffer);
+			Opcode operation = request.getOp();
+			System.out.println(operation);
 			switch(operation) {
 				case CONNECT: {
-                    ConnectPacket connectPacket = (ConnectPacket) incomingPacket;
+					ConnectPacket rq = new ConnectPacket(request);
+					//ConnectPacket response = new ConnectPacket(System.currentTimeMillis(),Thread.currentThread().getName());
+                    System.out.println(operation + " Connected: " + rq.getUsername());
+                    //need user info added to payload
+                    //Add username to list of clients
                     break;
                 }
 				case ADD_QUEUE: {
-                    AddQueuePacket addQueuePacket = (AddQueuePacket) incomingPacket;
+                    System.out.println(operation);
+					//AddQueuePacket addQueuePacket = (AddQueuePacket) incomingPacket;
                     break;
                 }
 				case REMOVE_QUEUE: {
-                    RemoveQueuePacket removeQueuePacket = (RemoveQueuePacket) incomingPacket;
+                    System.out.println(operation);
+					//RemoveQueuePacket removeQueuePacket = (RemoveQueuePacket) incomingPacket;
                 }
+				case QUEUE_UPDATE {
+					
+					break;
+				}
+				case CHAT{
+					
+					break;
+				}
 			}
 		}
 	}
