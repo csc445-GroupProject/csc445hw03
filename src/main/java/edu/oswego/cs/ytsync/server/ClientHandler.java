@@ -65,18 +65,19 @@ public class ClientHandler implements Runnable {
                 }
 				case ADD_QUEUE: {
                     System.out.println(operation);
-					//AddQueuePacket addQueuePacket = (AddQueuePacket) incomingPacket;
+					AddQueuePacket addQueuePacket = new AddQueuePacket(request);
+					String url = addQueuePacket.getId();
                     break;
                 }
 				case REMOVE_QUEUE: {
                     System.out.println(operation);
-					//RemoveQueuePacket removeQueuePacket = (RemoveQueuePacket) incomingPacket;
+					RemoveQueuePacket removeQueuePacket = new RemoveQueuePacket(request);
                 }
-				case QUEUE_UPDATE {
+				case QUEUE_UPDATE: {
 					
 					break;
 				}
-				case CHAT{
+				case CHAT: {
 					
 					break;
 				}
