@@ -70,7 +70,7 @@ public class Client implements Runnable {
                 switch (packet.getOp()) {
                     case QUEUE_UPDATE:
                         QueueUpdatePacket queuePacket = new QueueUpdatePacket(packet);
-                        //List<String> idQueue = queuePacket.getIds(); // CANT FIGURE THIS OUT, WANTED TO ASK ABOUT THIS
+                        List<String> idQueue = queuePacket.getIds();
                         sendQueueToGUI();
                         break;
 
