@@ -10,9 +10,7 @@ import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
@@ -31,6 +29,7 @@ public class ClientApp extends Application {
     private ListView<String> queueView;
     MediaPlayer player;
     MediaView playerView;
+    private Slider volumeSlider;
 
     public static void main(String args[]) {
         launch(args);
@@ -59,6 +58,7 @@ public class ClientApp extends Application {
         uiBox.setSpacing(10);
         playerView.fitHeightProperty().bind(root.heightProperty().multiply(.50));
 
+        //menu
         MenuBar menuBar = new MenuBar();
         Menu viewMenu = new Menu("View");
         CheckMenuItem toggleVideo = new CheckMenuItem("Show Video");
@@ -157,6 +157,8 @@ public class ClientApp extends Application {
                 player = new MediaPlayer(new Media(url));
                 playerView.setMediaPlayer(player);
                 player.play();
+                player.setVolume(.5);
+                chatArea.appendText("The Volume of this Video is: " + player.getVolume() + ".\n\n");
             } catch (YoutubeDLException e1) {
                 e1.printStackTrace();
             }
@@ -164,11 +166,30 @@ public class ClientApp extends Application {
     }
 
     private void handleInput() {
+        // seeks the video the number entered is the number of seconds the video will sync to from the beginning of the song
         if(chatField.getText().startsWith("!seek ")) {
             double offset = Double.parseDouble(chatField.getText().substring(6));
             player.seek(Duration.seconds(offset));
         }
-        chatArea.appendText(String.format("%s: %s\n", client.getUsername(), chatField.getText().trim()));
+
+        //toggles mute for the video
+        if(chatField.getText().startsWith("!mute")) {
+            if(player.isMute()) {
+                player.setMute(false);
+            } else {
+                player.setMute(true);
+            }
+        }
+
+        //controls the volume
+        if(chatField.getText().startsWith("!volume ")) {
+            double volume = Double.parseDouble(chatField.getText().substring(8));
+            if(volume >= 0 && volume <= 1.0)
+                player.setVolume(volume);
+        }
+
+
+        chatArea.appendText(String.format("User: %s\n", /*client.getUsername(), */chatField.getText().trim()));
         chatField.clear();
     }
 }

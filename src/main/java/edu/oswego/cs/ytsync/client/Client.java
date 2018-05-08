@@ -71,9 +71,13 @@ public class Client implements Runnable {
                     case QUEUE_UPDATE:
                         QueueUpdatePacket queuePacket = new QueueUpdatePacket(packet);
                         List<String> idQueue = queuePacket.getIds();
-                        sendQueueToGUI();
+                        sendQueueToGUI(idQueue);
                         break;
-
+                    case CHAT:
+                        ChatPacket chatPacket = new ChatPacket(packet);
+                        List<String> chatList = chatPacket.getMessages();
+                        sendChatToGUI(chatList);
+                        break;
                 }
             } catch(SocketTimeoutException e) {
                 sendTimeoutToGUI();
@@ -117,19 +121,22 @@ public class Client implements Runnable {
 
 
     /**
-     * This function tells the GUI that the client has received a timeout exception
-     * THIS FUNCTION STILL NEEDS TO BE EDITED TO RETURN HOWEVER THE TIMEOUT WILL BE SENT TO THE GUI
+     * This function tells the GUI that the client has received a timeout exception.
+     * @return A string that says you have lost connection with the server.
      */
-    public void sendTimeoutToGUI() {
-
-    }
+    public String sendTimeoutToGUI() { return "You have lost connection with the Server"; }
 
     /**
-     * This method sends the new updated queue to the GUI.
-     *
-     * THIS METHOD NEEDS TO BE UPDATED TO RETURN WHATEVER TYPE OF OBJECT THE QUEUE IS
+     * This method send the queue of video URLs to the GUI to be displayed
+     * @param queue a List of Strings that represents the URLs for the playlist
+     * @return The queue list as a list of strings
      */
-    public void sendQueueToGUI() {
+    public List<String> sendQueueToGUI(List<String> queue) { return queue; }
 
-    }
+    /**
+     * This method sends the chat to the GUI for viewing by the user
+     * @param chat a list of Strings that represents the chat messages sent by the clients
+     * @return The chat as a list of Strings.
+     */
+    public List<String> sendChatToGUI(List<String> chat) {return chat; }
 }
