@@ -1,6 +1,6 @@
 package edu.oswego.cs.ytsync.server;
 
-import edu.oswego.cs.ytsync.Client;
+import edu.oswego.cs.ytsync.client.Client;
 import edu.oswego.cs.ytsync.common.*;
 
 import java.io.DataInputStream;
