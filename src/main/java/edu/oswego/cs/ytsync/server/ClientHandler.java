@@ -8,6 +8,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.sql.PseudoColumnUsage;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public class ClientHandler implements Runnable {
 	final DataOutputStream dout;
@@ -15,13 +17,17 @@ public class ClientHandler implements Runnable {
 	final Socket socket;
 	//final Client client;
 	final PacketStream ps;
+	final ConcurrentLinkedQueue<String> clq;
+	final PriorityBlockingQueue<String> pbq;
 
-	public ClientHandler(Socket socket) throws IOException{
+	public ClientHandler(Socket socket, ConcurrentLinkedQueue<String> clq, PriorityBlockingQueue<String> pbq) throws IOException{
 		//this.client = client;
 		this.socket = socket;
 		this.din = new DataInputStream(socket.getInputStream());
 		this.dout = new DataOutputStream(socket.getOutputStream());
 		this.ps = new PacketStream(din);
+		this.clq = clq;
+		this.pbq = pbq;
 	}
 	
 	public DataInputStream getDataInputStream() {
@@ -39,34 +45,31 @@ public class ClientHandler implements Runnable {
 
 	@Override
 	public void run() {
-		//client connects, exchange ConnectPacket
-		//First recieve
 
 		while (true) {
-			System.out.println("ayaya");
-			byte[] packetBuffer = new byte[2400];
-			try {
-				din.read(packetBuffer);
-			} catch(IOException e) {
-				System.out.println("Cant read buffer: total" + (10000 - packetBuffer.length));
-			}
-			//recieve, decode, and read packet from client
-			Packet request = Packet.fromByteArray(packetBuffer);
+
+			while(!ps.hasNext()) {
+                ps.bufferPackets();
+            } 
+            Packet request = ps.next();
 			Opcode operation = request.getOp();
-			System.out.println(operation);
+			
 			switch(operation) {
 				case CONNECT: {
+					if(request.getPayload() == null) {
+						request.setPayload(Thread.currentThread().getName().getBytes());
+					}
 					ConnectPacket rq = new ConnectPacket(request);
 					//ConnectPacket response = new ConnectPacket(System.currentTimeMillis(),Thread.currentThread().getName());
                     System.out.println(operation + " Connected: " + rq.getUsername());
-                    //need user info added to payload
-                    //Add username to list of clients
+                    
                     break;
                 }
 				case ADD_QUEUE: {
                     System.out.println(operation);
 					AddQueuePacket addQueuePacket = new AddQueuePacket(request);
 					String url = addQueuePacket.getId();
+					pbq.add(url);
                     break;
                 }
 				case REMOVE_QUEUE: {
@@ -78,7 +81,14 @@ public class ClientHandler implements Runnable {
 					break;
 				}
 				case CHAT: {
-					
+					MessagePacket messagePacket = new MessagePacket(request);
+					String message = messagePacket.getMessage();
+					System.out.println(operation + " new message: " + message);
+					clq.add(message);
+					System.out.println(message);
+					while(clq.size() > 1000) {
+						System.out.println("removed: " + clq.remove());
+					}
 					break;
 				}
 			}
