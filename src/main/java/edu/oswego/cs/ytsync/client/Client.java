@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Client implements Runnable {
@@ -16,6 +17,8 @@ public class Client implements Runnable {
     private String username;
     private String serverName;
     private PacketStream ps;
+    private List<String> idQueue;
+    private List<String> chatList;
 
     Client(String addr, int port, String username) throws IOException {
         this.username = username;
@@ -62,31 +65,32 @@ public class Client implements Runnable {
      * This method listens for incoming packets from the server. This method will populate the GUI with the contents of
      * the packet if necessary.
      */
-    public void listen() {
-        while(true) {
+    public int listen() {
             try {
                 clientSocket.setSoTimeout(5000);
                 Packet packet = Packet.fromByteArray(clientSocket.getInputStream().readAllBytes());
                 switch (packet.getOp()) {
                     case QUEUE_UPDATE:
                         QueueUpdatePacket queuePacket = new QueueUpdatePacket(packet);
-                        List<String> idQueue = queuePacket.getIds();
-                        sendQueueToGUI(idQueue);
-                        break;
+                        idQueue = queuePacket.getIds();
+                        return 0;
                     case CHAT:
                         ChatPacket chatPacket = new ChatPacket(packet);
-                        List<String> chatList = chatPacket.getMessages();
-                        sendChatToGUI(chatList);
-                        break;
+                        chatList = chatPacket.getMessages();
+                        return 1;
+                    default:
+                        return -1;
                 }
             } catch(SocketTimeoutException e) {
                 sendTimeoutToGUI();
+                return -1;
             } catch(SocketException e) {
                 System.out.println("Socket has timed out.");
+                return -1;
             } catch(IOException e) {
                 System.out.println("IO Exception has occurred.");
+                return -1;
             }
-        }
     }
 
     /**
@@ -128,15 +132,21 @@ public class Client implements Runnable {
 
     /**
      * This method send the queue of video URLs to the GUI to be displayed
-     * @param queue a List of Strings that represents the URLs for the playlist
      * @return The queue list as a list of strings
      */
-    public List<String> sendQueueToGUI(List<String> queue) { return queue; }
+    public List<String> sendQueueToGUI() {
+        if(idQueue != null) {
+            return idQueue;
+        } else {
+            List<String> noQueueList = new ArrayList<>();
+            noQueueList.add("Queue has not been initialized");
+            return noQueueList;
+        }
+    }
 
     /**
      * This method sends the chat to the GUI for viewing by the user
-     * @param chat a list of Strings that represents the chat messages sent by the clients
      * @return The chat as a list of Strings.
      */
-    public List<String> sendChatToGUI(List<String> chat) {return chat; }
+    public List<String> sendChatToGUI() { return chatList; }
 }

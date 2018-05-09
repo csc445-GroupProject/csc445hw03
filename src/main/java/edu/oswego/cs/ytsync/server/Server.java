@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 
-import edu.oswego.cs.ytsync.Client;
+import edu.oswego.cs.ytsync.client.Client;
 import edu.oswego.cs.ytsync.common.*;
 
 public class Server extends Thread{

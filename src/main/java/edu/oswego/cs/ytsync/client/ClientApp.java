@@ -16,8 +16,8 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
 import java.io.IOException;
+import java.util.List;
 
 public class ClientApp extends Application {
     private Client client;
@@ -128,6 +128,14 @@ public class ClientApp extends Application {
             } catch (IOException e) {
                 Alert errAlert = new Alert(Alert.AlertType.ERROR, "Could not connect to server.");
                 errAlert.showAndWait();
+            }
+            while(true) {
+                int listenInt = client.listen();
+                if(listenInt == 0) {
+                    List<String> queue = client.sendQueueToGUI();
+                } else if(listenInt == 1) {
+                    List<String> chatList = client.sendChatToGUI();
+                }
             }
         });
 
