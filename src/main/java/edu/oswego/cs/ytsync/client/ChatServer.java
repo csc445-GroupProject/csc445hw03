@@ -10,6 +10,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,13 +92,14 @@ public class ChatServer implements Runnable{
         }
     }
 
-    public boolean runForLeader() {
+    public void runForLeader() { //TODO implementation is flawed
         currentTerm++;
         state = State.CANDIDATE;
-        boolean updated = false;
+        boolean successful = false;
 
-        while(!updated) {
+        while(!successful) {
             if(hostnamesLocked.compareAndSet(false, true)) {
+                successful = true;
                 int clientSocketNumber = 65500;
                 Random r = new Random();
                 int timeoutTime = r.nextInt(150) + 150;
@@ -122,18 +124,35 @@ public class ChatServer implements Runnable{
                     } catch(SocketTimeoutException e) {
                         System.out.println("SocketTimeout");
                         hostnamesLocked.compareAndSet(true, false);
-                        return false;
                     }catch(IOException e) {
                         System.out.println("Unable to open the socket for " + hostname);
                         hostnamesLocked.compareAndSet(true, false);
-                        return false;
                     }
                 }
                 hostnamesLocked.compareAndSet(true, false);
 
             }
         }
-        return true;
+        if(votedFor>majority) {
+            state = State.LEADER;
+        }
+    }
+
+    public void sendVoteForLeader(LeaderVotePacket packet, Socket socket) {
+        Random r = new Random();
+        int socketTimeoutTime = r.nextInt(150) + 150;
+
+        try {
+            socket.setSoTimeout(socketTimeoutTime);
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            out.write(packet.toByteArray());
+        } catch(SocketTimeoutException e) {
+            runForLeader();
+        } catch(SocketException e) {
+            runForLeader();
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
