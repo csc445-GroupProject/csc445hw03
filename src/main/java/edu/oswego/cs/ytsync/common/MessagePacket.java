@@ -1,9 +1,10 @@
 package edu.oswego.cs.ytsync.common;
 
 public class MessagePacket extends Packet {
-    public MessagePacket(Long timestamp, String message) {
+    public MessagePacket(Long timestamp, String message, String username) {
         super(Opcode.CHAT, timestamp);
-        this.setPayload(message.getBytes());
+        String fullMessage = String.format("%s %d: %s", username, timestamp, message);
+        this.setPayload(fullMessage.getBytes());
     }
 
     public MessagePacket(Packet p) { super(p.getOp(), p.getTimestamp(), p.getPayload()); }
