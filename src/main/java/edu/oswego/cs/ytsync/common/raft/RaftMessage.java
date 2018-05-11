@@ -120,7 +120,7 @@ public class RaftMessage {
      * @param leaderId the leader's index in the peer node's List of sockets
      * @param prevLogIndex the last entry of the log that was added before the list of entries the leader node is
      *                     requesting be appended
-     * @param prevLogTerm the election term of the last entry that was committed
+     * @param prevLogTerm the term of the prevLogIndex entry
      * @param entries a List of LogEntries that are being requested to add to the log
      * @param leaderCommit The last entry in the log that is committed by the leader
      * @return A RaftMessage that can will be sent to all peer nodes requesting that they add thee sent entries to their
