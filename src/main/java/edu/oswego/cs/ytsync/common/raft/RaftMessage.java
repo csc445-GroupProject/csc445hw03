@@ -21,6 +21,58 @@ public class RaftMessage {
     private Boolean success;
     private Boolean voteGranted;
 
+    public MessageType getType() {
+        return type;
+    }
+
+    public Integer getTerm() {
+        return term;
+    }
+
+    public Integer getLeaderId() {
+        return leaderId;
+    }
+
+    public Integer getPrevLogIndex() {
+        return prevLogIndex;
+    }
+
+    public Integer getPrevLogTerm() {
+        return prevLogTerm;
+    }
+
+    public List<LogEntry> getEntries() {
+        return entries;
+    }
+
+    public LogEntry getEntry() {
+        return entry;
+    }
+
+    public Integer getLeaderCommit() {
+        return leaderCommit;
+    }
+
+    public Integer getCandidateId() {
+        return candidateId;
+    }
+
+    public Integer getLastLogIndex() {
+        return lastLogIndex;
+    }
+
+    public Integer getLastLogTerm() {
+        return lastLogTerm;
+    }
+
+    public Boolean getSuccess() {
+        return success;
+    }
+
+    public Boolean getVoteGranted() {
+        return voteGranted;
+    }
+
     private RaftMessage(MessageType type, Integer term, Integer leaderId, Integer prevLogIndex, Integer prevLogTerm,
                         List<LogEntry> entries, LogEntry entry, Integer leaderCommit, Integer candidateId,
                         Integer lastLogIndex, Integer lastLogTerm, Boolean success, Boolean voteGranted) {
