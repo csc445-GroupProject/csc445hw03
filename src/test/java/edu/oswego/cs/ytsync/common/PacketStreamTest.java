@@ -4,15 +4,12 @@ import org.junit.Test;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.net.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.ByteChannel;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class PacketStreamTest {
 

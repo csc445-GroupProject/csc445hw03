@@ -1,13 +1,11 @@
 package edu.oswego.cs.ytsync.server;
 
-import edu.oswego.cs.ytsync.client.Client;
 import edu.oswego.cs.ytsync.common.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.sql.PseudoColumnUsage;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 

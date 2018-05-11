@@ -37,12 +37,6 @@ dependencies {
 
     // https://mvnrepository.com/artifact/commons-net/commons-net
     implementation group: 'commons-net', name: 'commons-net', version: '3.4'
-
-    implementation "com.beust:jcommander:1.71"
-
-    implementation "com.github.sapher:youtubedl-java:1.+"
-
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
 }
 
 jar {
@@ -55,8 +49,8 @@ jar {
     }
 }
 
-sourceCompatibility = 1.10
-targetCompatibility = 1.10
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 // Define the main class for the application
 mainClassName = 'edu.oswego.cs.ytsync.App'

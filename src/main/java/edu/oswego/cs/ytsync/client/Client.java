@@ -3,12 +3,10 @@ package edu.oswego.cs.ytsync.client;
 import edu.oswego.cs.ytsync.common.*;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 

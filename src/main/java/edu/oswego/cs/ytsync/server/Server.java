@@ -1,21 +1,14 @@
 package edu.oswego.cs.ytsync.server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import edu.oswego.cs.ytsync.common.raft.RaftMessage;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.PriorityBlockingQueue;
-
-import edu.oswego.cs.ytsync.client.Client;
-import edu.oswego.cs.ytsync.common.*;
-import edu.oswego.cs.ytsync.common.raft.RaftMessage;
 
 public class Server extends Thread{
 	private final static int PORT = 2706;

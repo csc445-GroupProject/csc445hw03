@@ -5,14 +5,14 @@ package edu.oswego.cs.ytsync;/*
 import edu.oswego.cs.ytsync.client.ClientApp;
 import edu.oswego.cs.ytsync.server.Server;
 import javafx.application.Application;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class App {
 
 	public static void main(String[] args) throws IOException {
-        if(ArrayUtils.contains(args, "-server")) {
+        if(Arrays.asList(args).contains("-server")) {
             Server.main(args);
         } else {
             Application.launch(ClientApp.class, args);

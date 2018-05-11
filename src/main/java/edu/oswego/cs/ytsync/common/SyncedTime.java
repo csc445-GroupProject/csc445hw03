@@ -1,9 +1,9 @@
 package edu.oswego.cs.ytsync.common;
 
-import java.net.InetAddress;
-import java.util.Date;
 import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.TimeInfo;
+
+import java.net.InetAddress;
 
 public class SyncedTime {
 
