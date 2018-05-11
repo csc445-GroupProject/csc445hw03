@@ -6,42 +6,55 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import edu.oswego.cs.ytsync.client.Client;
 import edu.oswego.cs.ytsync.common.*;
+import edu.oswego.cs.ytsync.common.raft.RaftMessage;
 
 public class Server extends Thread{
 	private final static int PORT = 2706;
 	
 	public static void main(String args[]) throws IOException {
 		ServerSocket host = new ServerSocket(PORT);
-		System.out.println("Listening on PORT %d.\n" + host.getLocalPort() + " address: " + host.getInetAddress()	);
-		//List of messages
-		ConcurrentLinkedQueue<String> clq = new ConcurrentLinkedQueue<>();
-		PriorityBlockingQueue<String> pbq = new PriorityBlockingQueue<>();
-		List<String> queueList = (List)pbq;
-		Thread[] allThreads;
-		
-		
-		int x = 0; //possibly use to name threads
-		while (true) {
-			x += 1;
-			//Client first connects to the server
-			Socket clientSocket = host.accept();
-			System.out.printf("New connection from %s:%d\n", clientSocket.getInetAddress().getHostAddress(), clientSocket.getPort());
-				try {
-						//System.out.println("Thread");
-						ClientHandler clientHandler = new ClientHandler(clientSocket, clq, pbq);
-						new Thread(clientHandler).run();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				//Need to create way to send packets to all clients
-				}
-		}
+		Set<Socket> clients = new CopyOnWriteArraySet<>();
+		int clientCount = clients.size();
+		System.out.printf("Listening on port %d.\n", host.getLocalPort());
 
+		new Thread(() -> {
+		    try {
+		        while (true) {
+                    Socket client = host.accept();
+                    System.out.printf("New client %s.\n", client.getInetAddress());
+                    clients.add(client);
+                }
+            } catch (IOException e) {
+		        throw new RuntimeException();
+            }
+		}).start();
+
+		while (true) {
+		    if(clientCount != clients.size()) {
+		        System.out.printf("Sending client list\n");
+
+		        clientCount = clients.size();
+
+		        List<String> clientList = new ArrayList<>();
+
+		        for(Socket s : clients) {
+		            clientList.add(s.getInetAddress().toString());
+                }
+
+                for (Socket s : clients) {
+                    s.getOutputStream().write(RaftMessage.hostnameList(clientList).toByteArray());
+                    s.getOutputStream().flush();
+                }
+            }
+        }
+	}
 }

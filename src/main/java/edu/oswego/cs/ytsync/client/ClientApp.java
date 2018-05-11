@@ -40,12 +40,16 @@ public class ClientApp extends Application {
     public void start(Stage primaryStage) {
         new ConnectDialog().showAndWait().ifPresent(m -> {
             username = m.get("username");
-            String serverName = m.get("server");
+            String addr = m.get("server");
 
             int port = Integer.parseInt(m.get("port"));
 
+            chatServer = new ChatServer("google.com", addr, port, new ArrayList<>(), chatArea);
+
+            new Thread(chatServer).run();
+
             try {
-                server = new Socket(serverName, port);
+                server = new Socket(addr, port);
             } catch (IOException e) {
                 throw new RuntimeException();
             }
@@ -54,16 +58,25 @@ public class ClientApp extends Application {
                 RaftMessageBuffer buffer = new RaftMessageBuffer();
                 try {
                     InputStream in = server.getInputStream();
+                    byte[] bytes = new byte[16384];
 
                     while (true) {
-                        if(in.available() > 0) {
-                            buffer.addToBuffer(in.readAllBytes());
+                        int available = in.available();
+                        if(available > 0) {
+                            int size = in.read(bytes);
+                            buffer.addToBuffer(bytes, size);
 
                             if (buffer.hasNext()) {
                                 List<String> hostnames = new ArrayList<>();
 
+                                System.out.printf("\nNEW HOST LIST\n");
+
                                 while (buffer.hasNext()) {
                                     hostnames.addAll(buffer.next().getHostnames());
+                                }
+
+                                for(String h : hostnames) {
+                                    System.out.printf("%s\n", h);
                                 }
 
                                 chatServer.getUpdatedClientListFromServer(hostnames);
