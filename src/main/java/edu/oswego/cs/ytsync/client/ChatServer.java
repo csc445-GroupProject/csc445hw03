@@ -169,11 +169,10 @@ public class ChatServer implements Runnable{
      * The server will wait until a majority of other nodes have voted for the current node to change its state to leader
      * and begin broadcasting its heartbeat to the other clients
      */
-    private boolean runForLeader() { //TODO implementation is flawed
+    private boolean runForLeader(Socket socket) {
         currentTerm++;
         state = State.CANDIDATE;
         boolean successful = false;
-        AtomicBoolean bufferLocked = new AtomicBoolean(false);
         boolean hostsLocked = false;
 
         while(!hostsLocked) {
@@ -189,24 +188,17 @@ public class ChatServer implements Runnable{
                 if(candidateId != -1) {
                     Random r = new Random();
                     int timeout = r.nextInt(150) + 150;
-                    while (!successful) {
-                        if (socketsLocked.compareAndSet(false, true)) {
-                            successful = true;
-                            for (Socket socket : nodeSockets) {
-                                try {
-                                    //create thread
-                                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                                    RaftMessage leaderRequest = RaftMessage.voteRequest(currentTerm, candidateId, log.size() - 1, log.get(log.size() - 1).getTerm());
-                                    out.write(leaderRequest.toByteArray());
-                                    out.flush();
-                                    socket.setSoTimeout(timeout);
-                                } catch (IOException e) {
-                                    socketsLocked.compareAndSet(true, false);
-                                    return false;
+                    try {
+                        //create thread
+                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                        RaftMessage leaderRequest = RaftMessage.voteRequest(currentTerm, candidateId, log.size() - 1, log.get(log.size() - 1).getTerm());
+                        out.write(leaderRequest.toByteArray());
+                        out.flush();
+                        socket.setSoTimeout(timeout);
+                    } catch (IOException e) {
+                        socketsLocked.compareAndSet(true, false);
+                        return false;
 
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -233,9 +225,9 @@ public class ChatServer implements Runnable{
                 out.write(response.toByteArray());
                 out.flush();
             } catch (SocketTimeoutException e) {
-                runForLeader();
+                runForLeader(socket);
             } catch (SocketException e) {
-                runForLeader();
+                runForLeader(socket);
             } catch (IOException e) {
                 e.printStackTrace();
             }
