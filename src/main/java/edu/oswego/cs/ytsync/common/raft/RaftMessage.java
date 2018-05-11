@@ -176,7 +176,7 @@ public class RaftMessage {
 
         int size = baos.size();
         byte[] bytes = new byte[size + 4];
-        ByteBuffer.wrap(bytes).putInt(size).put(baos.toByteArray());
+        ByteBuffer.wrap(bytes).putInt(size + 4).put(baos.toByteArray());
         return bytes;
     }
 
