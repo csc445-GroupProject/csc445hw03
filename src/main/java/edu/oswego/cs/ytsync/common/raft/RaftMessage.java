@@ -1,6 +1,7 @@
 package edu.oswego.cs.ytsync.common.raft;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -59,11 +60,11 @@ public class RaftMessage {
         return new RaftMessage(MessageType.CHAT_MESSAGE, null, null, null, null, null, entry, null, null, null, null, null, null);
     }
 
-    ;
-
     public static RaftMessage fromByteArray(byte[] bytes) throws IOException {
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         DataInputStream in = new DataInputStream(bais);
+
+        in.readInt(); // Ignore the message size field
 
         MessageType type;
         try {
@@ -173,7 +174,10 @@ public class RaftMessage {
             e.printStackTrace();
         }
 
-        return baos.toByteArray();
+        int size = baos.size();
+        byte[] bytes = new byte[size + 4];
+        ByteBuffer.wrap(bytes).putInt(size).put(baos.toByteArray());
+        return bytes;
     }
 
     @Override
