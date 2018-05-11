@@ -284,13 +284,14 @@ public class ChatServer implements Runnable{
     public void listen(Socket socket) {
         try {
             DataInputStream in = new DataInputStream(socket.getInputStream());
-            byte[] newRaftMessage = in.readAllBytes();
+            byte[] newRaftMessage = new byte[8192];
+            int read = in.read(newRaftMessage);
             boolean isBufferLocked = false;
 
             while(!isBufferLocked) {
                 if(bufferLocked.compareAndSet(false, true)) {
                     isBufferLocked = true;
-                    buffer.addToBuffer(newRaftMessage, newRaftMessage.length);
+                    buffer.addToBuffer(newRaftMessage, read);
                 }
             }
 
