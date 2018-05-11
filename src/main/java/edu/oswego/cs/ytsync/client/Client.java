@@ -113,15 +113,15 @@ public class Client implements Runnable {
      * This method sends a MessagePacket to the server through the client socket.
      * @param message A String representing the chat message the client is sending to the server
      */
-    public void sendChatMessage(String message) {
-        try {
-            SyncedTime syncedTime = new SyncedTime(serverName);
-            MessagePacket packet = new MessagePacket(syncedTime.getTime(), message);
-            clientSocket.getOutputStream().write(packet.toByteArray());
-        } catch(IOException e) {
-            System.out.println("IO Exception has occurred.");
-        }
-    }
+//    public void sendChatMessage(String message) {
+//        try {
+//            SyncedTime syncedTime = new SyncedTime(serverName);
+//            MessagePacket packet = new MessagePacket(syncedTime.getTime(), message);
+//            clientSocket.getOutputStream().write(packet.toByteArray());
+//        } catch(IOException e) {
+//            System.out.println("IO Exception has occurred.");
+//        }
+//    }
 
 
     /**
