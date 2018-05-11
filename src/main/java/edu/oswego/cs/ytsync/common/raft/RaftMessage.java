@@ -20,6 +20,7 @@ public class RaftMessage {
     private Integer lastLogTerm;
     private Boolean success;
     private Boolean voteGranted;
+    private List<String> hostnames;
 
     public MessageType getType() {
         return type;
@@ -75,7 +76,7 @@ public class RaftMessage {
 
     private RaftMessage(MessageType type, Integer term, Integer leaderId, Integer prevLogIndex, Integer prevLogTerm,
                         List<LogEntry> entries, LogEntry entry, Integer leaderCommit, Integer candidateId,
-                        Integer lastLogIndex, Integer lastLogTerm, Boolean success, Boolean voteGranted) {
+                        Integer lastLogIndex, Integer lastLogTerm, Boolean success, Boolean voteGranted, List<String> hostnames) {
         this.type = type;
         this.term = term;
         this.leaderId = leaderId;
@@ -89,6 +90,7 @@ public class RaftMessage {
         this.lastLogTerm = lastLogTerm;
         this.success = success;
         this.voteGranted = voteGranted;
+        this.hostnames = hostnames;
     }
 
     /**
@@ -101,7 +103,7 @@ public class RaftMessage {
      */
     public static RaftMessage voteRequest(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
         return new RaftMessage(MessageType.VOTE_REQUEST, term, null, null, null, null, null, null, candidateId, lastLogIndex,
-                lastLogTerm, null, null);
+                lastLogTerm, null, null, null);
     }
 
     /**
@@ -111,7 +113,7 @@ public class RaftMessage {
      * @return A RaftMessage that will be sent to the requesting node
      */
     public static RaftMessage voteResponse(int term, boolean voteGranted) {
-        return new RaftMessage(MessageType.VOTE_RESPONSE, term, null, null, null, null, null, null, null, null, null, null, voteGranted);
+        return new RaftMessage(MessageType.VOTE_RESPONSE, term, null, null, null, null, null, null, null, null, null, null, voteGranted, null);
     }
 
     /**
@@ -127,7 +129,7 @@ public class RaftMessage {
      * log
      */
     public static RaftMessage appendRequest(int term, int leaderId, int prevLogIndex, int prevLogTerm, List<LogEntry> entries, int leaderCommit) {
-        return new RaftMessage(MessageType.APPEND_REQUEST, term, leaderId, prevLogIndex, prevLogTerm, entries, null, leaderCommit, null, null, null, null, null);
+        return new RaftMessage(MessageType.APPEND_REQUEST, term, leaderId, prevLogIndex, prevLogTerm, entries, null, leaderCommit, null, null, null, null, null, null);
     }
 
     /**
@@ -138,7 +140,7 @@ public class RaftMessage {
      * @return A RaftMessage to respond to an appendRequest message
      */
     public static RaftMessage appendResponse(int term, boolean success) {
-        return new RaftMessage(MessageType.APPEND_RESPONSE, term, null, null, null, null, null, null, null, null, null, success, null);
+        return new RaftMessage(MessageType.APPEND_RESPONSE, term, null, null, null, null, null, null, null, null, null, success, null, null);
     }
 
     /**
@@ -147,7 +149,11 @@ public class RaftMessage {
      * @return A RaftMessage to send to the leader node to append to the log
      */
     public static RaftMessage chatMessage(LogEntry entry) {
-        return new RaftMessage(MessageType.CHAT_MESSAGE, null, null, null, null, null, entry, null, null, null, null, null, null);
+        return new RaftMessage(MessageType.CHAT_MESSAGE, null, null, null, null, null, entry, null, null, null, null, null, null, null);
+    }
+
+    public static RaftMessage hostnameList(List<String> hostnames) {
+        return new RaftMessage(MessageType.HOST_LIST, null, null, null, null, null, null, null, null, null, null, null, null, hostnames);
     }
 
     public static RaftMessage fromByteArray(byte[] bytes) throws IOException {
@@ -205,6 +211,15 @@ public class RaftMessage {
                 String chatMessage = in.readUTF();
                 return RaftMessage.chatMessage(new LogEntry(term, username, chatMessage));
             }
+            case HOST_LIST: {
+                int size = in.readInt();
+                List<String> hostnames = new ArrayList<>();
+
+                for (int i = 0; i < size; i++) {
+                    hostnames.add(in.readUTF());
+                }
+                return RaftMessage.hostnameList(hostnames);
+            }
         }
 
         return null;
@@ -259,6 +274,15 @@ public class RaftMessage {
                     out.writeUTF(entry.getChatMessage());
                     break;
                 }
+                case HOST_LIST: {
+                    out.writeInt(type.ordinal());
+                    out.writeInt(hostnames.size());
+
+                    for (String h : hostnames) {
+                        out.writeUTF(h);
+                    }
+                    break;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -287,11 +311,12 @@ public class RaftMessage {
                 Objects.equals(lastLogIndex, that.lastLogIndex) &&
                 Objects.equals(lastLogTerm, that.lastLogTerm) &&
                 Objects.equals(success, that.success) &&
-                Objects.equals(voteGranted, that.voteGranted);
+                Objects.equals(voteGranted, that.voteGranted) &&
+                Objects.equals(hostnames, that.hostnames);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, term, leaderId, prevLogIndex, prevLogTerm, entries, entry, leaderCommit, candidateId, lastLogIndex, lastLogTerm, success, voteGranted);
+        return Objects.hash(type, term, leaderId, prevLogIndex, prevLogTerm, entries, entry, leaderCommit, candidateId, lastLogIndex, lastLogTerm, success, voteGranted, hostnames);
     }
 }

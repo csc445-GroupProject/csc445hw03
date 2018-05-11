@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -46,6 +47,14 @@ public class RaftMessageTest {
     @Test
     public void chatMessage() throws IOException {
         RaftMessage expected = RaftMessage.chatMessage(new LogEntry(3, "user1", "message1"));
+        RaftMessage result = RaftMessage.fromByteArray(expected.toByteArray());
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void hostList() throws IOException {
+        String[] hosts = {"pi.cs.oswego.edu", "www.example.com", "www.coolmathgames.com"};
+        RaftMessage expected = RaftMessage.hostnameList(Arrays.asList(hosts));
         RaftMessage result = RaftMessage.fromByteArray(expected.toByteArray());
         assertEquals(expected, result);
     }
