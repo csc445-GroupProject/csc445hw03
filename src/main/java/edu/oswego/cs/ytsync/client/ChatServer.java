@@ -1,7 +1,5 @@
 package edu.oswego.cs.ytsync.client;
 
-import edu.oswego.cs.ytsync.common.*;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -12,50 +10,51 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import edu.oswego.cs.ytsync.common.raft.*;
 import javafx.scene.control.TextArea;
 
 public class ChatServer implements Runnable{
-    private SyncedTime syncedTime;
+    private int currentTerm;
+    private int votedFor;
+    private List<LogEntry> log;
+    private List<Integer> nextIndex;
+    private List<Integer> matchIndex;
+    private int leaderId;
+
+
+
     private List<String> hostnames;
     private List<Socket> nodeSockets;
-    private List<LogEntry> log;
     private List<Host> hosts;
-    private String messageToBeSent;
     private int numOfUsers;
     private int majority;
-    private int votedFor;
     private State state;
     private String address;
     private String serverName;
     private int port;
     private int chatPort;
-    private int currentTerm;
-    private int electionVotes;
     private int commitVotes;
-    private int lastCommitted;
+    private int commitIndex;
+    private int lastApplied;
+    private int chatServerIndex;
     private AtomicBoolean hostnamesLocked;
     private AtomicBoolean socketsLocked;
     private AtomicBoolean logLocked;
     private AtomicBoolean bufferLocked;
     private boolean voted = false;
     private TextArea guiTextArea;
-    private Socket socketForDedicatedServer;
     private Host leader;
     private Host me;
     private RaftMessageBuffer buffer;
 
     /**
      * Constructor for the Chat Server
-     * @param serverName the hostname for the main server for the application
      * @param addr the hostname of the client that is associated with this particular node
      * @param serverPort the port number for the port associated with the main server for the application
      * @param hostnames a list of messages sent from the main server for the application
      * @param guiTextArea the text area that the server will append its changes to
      */
-    ChatServer(String serverName, String addr, int serverPort, List<String> hostnames, TextArea guiTextArea) {
-        this.serverName = serverName;
+    ChatServer(String addr, int serverPort, List<String> hostnames, TextArea guiTextArea) {
         currentTerm = 0;
         address = addr;
         this.port = serverPort;
@@ -67,22 +66,34 @@ public class ChatServer implements Runnable{
         bufferLocked = new AtomicBoolean(false);
         socketsLocked = new AtomicBoolean(false);
         logLocked = new AtomicBoolean(false);
-        syncedTime = new SyncedTime(serverName);
         nodeSockets = new ArrayList<>();
         this.guiTextArea = guiTextArea;
         log = new ArrayList<>();
         hosts = new ArrayList<>();
         buffer = new RaftMessageBuffer();
-        electionVotes = 1;
+        votedFor = 1;
         commitVotes = 1;
-        lastCommitted = 0;
-        try {
-            socketForDedicatedServer = new Socket(serverName, serverPort);
-        } catch(IOException e) {
-            System.out.println("Couldn't connect to Server");
-        }
+        commitIndex = 0;
+        chatServerIndex = 0;
     }
 
+    /**
+     * A method to get the updated list of hostnames from the main server of the application
+     * @param updatedList the updated list of hostnames
+     */
+    public void getUpdatedClientListFromServer(List<String> updatedList) {
+        boolean updated = false;
+        while(!updated) {
+            if(hostnamesLocked.compareAndSet(false, true)) {
+                hostnames = updatedList;
+                createHostsForHostNames();
+                openSocketsForNewHosts();
+               chatServerIndex = hostnames.indexOf(address);
+                updated = true;
+                hostnamesLocked.compareAndSet(true, false);
+            }
+        }
+    }
 
     /**
      * Creates a Host object for each client connected to the application
@@ -98,9 +109,13 @@ public class ChatServer implements Runnable{
                     for(Host host : hosts) {
                         if(host.getHostname().equals(hostname))
                             hostFound = true;
+                        if(host.getHostname().equals(address)) {
+                            me = host;
+                        }
                     }
                     if (!hostFound) {
                         Host newHost = new Host(hostname, serverSocketPortNumber);
+                        hosts.add(newHost);
                         serverSocketPortNumber--;
                     }
                 }
@@ -148,31 +163,13 @@ public class ChatServer implements Runnable{
     }
 
     /**
-     * A method to get the updated list of hostnames from the main server of the application
-     * @param updatedList the updated list of hostnames
-     */
-    public void getUpdatedClientListFromServer(List<String> updatedList) {
-        boolean updated = false;
-        while(!updated) {
-            if(hostnamesLocked.compareAndSet(false, true)) {
-                hostnames = updatedList;
-                createHostsForHostNames();
-                openSocketsForNewHosts();
-                updated = true;
-                hostnamesLocked.compareAndSet(true, false);
-            }
-        }
-    }
-
-    /**
      * This method is performed when a socket timeout occurs while the server is waiting to hear from the Leader Server
      * The server will wait until a majority of other nodes have voted for the current node to change its state to leader
      * and begin broadcasting its heartbeat to the other clients
      */
     private boolean runForLeader(Socket socket) {
-        currentTerm++;
+        updateElectionTerm(currentTerm++);
         state = State.CANDIDATE;
-        boolean successful = false;
         boolean hostsLocked = false;
 
         while(!hostsLocked) {
@@ -234,6 +231,74 @@ public class ChatServer implements Runnable{
         }
     }
 
+
+    /**
+     * Sends the heartbeat through the given socket to be received by another client
+     * @param socket the socket where this method will communicate through
+     */
+    private void sendHeartbeat(Socket socket) {
+        int leaderId = -1;
+        boolean isHostLocked = false;
+        while(!isHostLocked) {
+            if(hostnamesLocked.compareAndSet(false, true)) {
+                isHostLocked = true;
+                for (int i = 0, length = hosts.size(); i < length; i++) {
+                    if (hosts.get(i).getHostname().equals(me.getHostname())) {
+                        leaderId = i;
+                    }
+                }
+                hostnamesLocked.compareAndSet(true, false);
+            }
+        }
+        boolean isLogLocked = false;
+        while(!isLogLocked) {
+            if(logLocked.compareAndSet(false, true)) {
+                isLogLocked = true;
+                List<LogEntry> newLogEntries = new ArrayList<>();
+                for(int i = commitIndex + 1, length = log.size(); i<length; i++) {
+                    newLogEntries.add(log.get(i));
+                }
+                if (leaderId != -1) {
+                    RaftMessage appendRequest = RaftMessage.appendRequest(currentTerm, leaderId, commitIndex, log.get(log.size()-1).getTerm(), newLogEntries, commitIndex); //TODO fix prevLogIndex (first commitIndex)
+                    try {
+                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                        out.write(appendRequest.toByteArray());
+                    } catch(IOException e) {
+                        System.out.println("An IO Exception has occurred.");
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean appendEntries() {
+
+        return false;
+    }
+
+    /**
+     * Listens for incoming RaftMessages from a specific peer, designed to be thread safe
+     * @param socket the socket to listen from
+     */
+    public void listen(Socket socket) {
+        try {
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            byte[] newRaftMessage = in.readAllBytes();
+            boolean isBufferLocked = false;
+
+            while(!isBufferLocked) {
+                if(bufferLocked.compareAndSet(false, true)) {
+                    isBufferLocked = true;
+                    buffer.addToBuffer(newRaftMessage, newRaftMessage.length);
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println("IO Exception has occurred");
+        }
+    }
+
+
     /**
      * A method to get a new chat message from the Client who owns this chatServer
      * @param message the message that the client is sending
@@ -266,26 +331,28 @@ public class ChatServer implements Runnable{
     }
 
     /**
-     * Listens for incoming RaftMessages from a specific peer, designed to be thread safe
-     * @param socket the socket to listen from
+     * Responds to the leader node's heartbeat
+     * @param message The response that will be sent back to the leader node
+     * @param socket The socket that is associated with the leader node
      */
-    public void listen(Socket socket) {
-        try {
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            byte[] newRaftMessage = in.readAllBytes();
-            boolean isBufferLocked = false;
+    private void respondToAppendRequest(RaftMessage message, Socket socket) {
+        boolean isLogLocked = false;
 
-            while(!isBufferLocked) {
-                if(bufferLocked.compareAndSet(false, true)) {
-                    isBufferLocked = true;
-                    buffer.addToBuffer(newRaftMessage, newRaftMessage.length);
+        while(!isLogLocked) {
+            if (logLocked.compareAndSet(false, true)) {
+                isLogLocked = true;
+                log.add(message.getEntry());
+                RaftMessage appendResponse = RaftMessage.appendResponse(currentTerm, true);
+                try {
+                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                    out.write(appendResponse.toByteArray());
+                } catch(IOException e) {
+                    System.out.println("An IOException has occurred.");
                 }
             }
-
-        } catch (IOException e) {
-            System.out.println("IO Exception has occurred");
         }
     }
+
 
     /**
      * Handles the RaftMessages currently in the buffer, will call the appropriate methods depending on the packet type
@@ -302,7 +369,7 @@ public class ChatServer implements Runnable{
 
                     switch (message.getType()) {
                         case VOTE_REQUEST:
-                            electionVotes = 1;
+                            votedFor = 1;
                             areSocketsLocked = false;
                             while(!areSocketsLocked) {
                                 if(socketsLocked.compareAndSet(false, true)) {
@@ -352,85 +419,35 @@ public class ChatServer implements Runnable{
     }
 
     /**
-     * Responds to the leader node's heartbeat
-     * @param message The response that will be sent back to the leader node
-     * @param socket The socket that is associated with the leader node
-     */
-    private void respondToAppendRequest(RaftMessage message, Socket socket) {
-        boolean isLogLocked = false;
-
-        while(!isLogLocked) {
-            if (logLocked.compareAndSet(false, true)) {
-                isLogLocked = true;
-                log.add(message.getEntry());
-                RaftMessage appendResponse = RaftMessage.appendResponse(currentTerm, true);
-                try {
-                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                    out.write(appendResponse.toByteArray());
-                } catch(IOException e) {
-                    System.out.println("An IOException has occurred.");
-                }
-            }
-        }
-    }
-
-    /**
      * Updates the election votes, changes the state of the node it it has gotten majority vote from the other hosts
      */
     private void updateElectionVoteCount() {
-        electionVotes++;
-        if(electionVotes > majority) {
+        votedFor++;
+        if(votedFor > majority) {
             state = State.LEADER;
-            electionVotes = 1;
+            votedFor = 1;
         }
     }
 
     /**
-     * Updates the commit vote count, if the node has gotten majority votes, updates lastCommitted to the last log entry
+     * Updates the commit vote count, if the node has gotten majority votes, updates commitIndex to the last log entry
      * who's term is the same as the currentTerm
      */
     private void updateCommitVoteCount() { //we might have an issue with this, specifically not being able to find which log entries to commit, without committing all of them.
         commitVotes++;
         if(commitVotes > majority) {
-            for(int i = lastCommitted, length = log.size(); i<length; i++) {
+            for(int i = commitIndex, length = log.size(); i<length; i++) {
                 if (log.get(i).getTerm() == currentTerm) {
-                    lastCommitted = i;
+                    commitIndex = i;
                     commitVotes = 1;
                 }
             }
         }
     }
 
-    /**
-     * Sends the heartbeat through the given socket to be received by another client
-     * @param socket the socket where this method will communicate through
-     */
-    private void sendHeartbeat(Socket socket) {
-        int leaderId = -1;
-        for(int i=0, length = hosts.size(); i<length; i++) {
-            if(hosts.get(i).getHostname().equals(me.getHostname())) {
-                leaderId = i;
-            }
-        }
-        boolean isLogLocked = false;
-        while(!isLogLocked) {
-            if(logLocked.compareAndSet(false, true)) {
-                isLogLocked = true;
-                List<LogEntry> newLogEntries = new ArrayList<>();
-                for(int i = lastCommitted + 1, length = log.size(); i<length; i++) {
-                    newLogEntries.add(log.get(i));
-                }
-                if (leaderId != -1) {
-                    RaftMessage appendRequest = RaftMessage.appendRequest(currentTerm, leaderId, lastCommitted, log.get(log.size()-1).getTerm(), newLogEntries, lastCommitted); //TODO fix prevLogIndex (first lastCommitted)
-                    try {
-                        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                        out.write(appendRequest.toByteArray());
-                    } catch(IOException e) {
-                        System.out.println("An IO Exception has occurred.");
-                    }
-                }
-            }
-        }
+    private void updateElectionTerm(int newTerm) {
+        currentTerm = newTerm;
+        votedFor = 1;
     }
 
     /**
