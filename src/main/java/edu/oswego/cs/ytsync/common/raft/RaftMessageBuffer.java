@@ -19,6 +19,8 @@ public class RaftMessageBuffer {
         buffer = ByteBuffer.allocate(bufferSize);
     }
 
+    public void addToBuffer(byte[] bytes) { addToBuffer(bytes, bytes.length); }
+
     public void addToBuffer(byte[] bytes, int count) {
         buffer.put(bytes, 0, count);
         buffered += count;

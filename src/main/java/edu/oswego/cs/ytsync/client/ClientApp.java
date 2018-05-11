@@ -7,6 +7,7 @@ import com.sapher.youtubedl.YoutubeDLRequest;
 import com.sapher.youtubedl.YoutubeDLResponse;
 import edu.oswego.cs.ytsync.client.components.ConnectDialog;
 import edu.oswego.cs.ytsync.common.ConnectPacket;
+import edu.oswego.cs.ytsync.common.raft.RaftMessageBuffer;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -18,7 +19,9 @@ import javafx.scene.media.MediaView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +49,31 @@ public class ClientApp extends Application {
             } catch (IOException e) {
                 throw new RuntimeException();
             }
+
+            new Thread(() -> {
+                RaftMessageBuffer buffer = new RaftMessageBuffer();
+                try {
+                    InputStream in = server.getInputStream();
+
+                    while (true) {
+                        if(in.available() > 0) {
+                            buffer.addToBuffer(in.readAllBytes());
+
+                            if (buffer.hasNext()) {
+                                List<String> hostnames = new ArrayList<>();
+
+                                while (buffer.hasNext()) {
+                                    hostnames.addAll(buffer.next().getHostnames());
+                                }
+
+                                chatServer.getUpdatedClientListFromServer(hostnames);
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }).start();
 
             chatField = new TextField();
             chatArea = new TextArea();

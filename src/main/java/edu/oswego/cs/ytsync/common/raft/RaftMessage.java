@@ -74,6 +74,10 @@ public class RaftMessage {
         return voteGranted;
     }
 
+    public List<String> getHostnames() {
+        return hostnames;
+    }
+
     private RaftMessage(MessageType type, Integer term, Integer leaderId, Integer prevLogIndex, Integer prevLogTerm,
                         List<LogEntry> entries, LogEntry entry, Integer leaderCommit, Integer candidateId,
                         Integer lastLogIndex, Integer lastLogTerm, Boolean success, Boolean voteGranted, List<String> hostnames) {
