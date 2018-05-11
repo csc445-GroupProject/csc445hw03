@@ -91,23 +91,61 @@ public class RaftMessage {
         this.voteGranted = voteGranted;
     }
 
+    /**
+     * Creates a RaftMessage to request votes from peer nodes during leader elections
+     * @param term the sending node's current election term
+     * @param candidateId the node's location in the peer nodes arrayList of sockets
+     * @param lastLogIndex the requesting node's last committed log entry
+     * @param lastLogTerm the election term of the logs last entry
+     * @return a RaftMessage that can be used for requesting votes from peer nodes
+     */
     public static RaftMessage voteRequest(int term, int candidateId, int lastLogIndex, int lastLogTerm) {
         return new RaftMessage(MessageType.VOTE_REQUEST, term, null, null, null, null, null, null, candidateId, lastLogIndex,
                 lastLogTerm, null, null);
     }
 
+    /**
+     * Creates a RaftMessage to respond to a voteRequest
+     * @param term the node's current election term
+     * @param voteGranted whether or not the vote was granted
+     * @return A RaftMessage that will be sent to the requesting node
+     */
     public static RaftMessage voteResponse(int term, boolean voteGranted) {
-        return new RaftMessage(MessageType.VOTE_RESOPNSE, term, null, null, null, null, null, null, null, null, null, null, voteGranted);
+        return new RaftMessage(MessageType.VOTE_RESPONSE, term, null, null, null, null, null, null, null, null, null, null, voteGranted);
     }
 
+    /**
+     * Creates a RaftMessage requesting that peer nodes append the latest message to their logs
+     * @param term the node's current election term
+     * @param leaderId the leader's index in the peer node's List of sockets
+     * @param prevLogIndex the last entry of the log that was added before the list of entries the leader node is
+     *                     requesting be appended
+     * @param prevLogTerm the election term of the last entry that was committed
+     * @param entries a List of LogEntries that are being requested to add to the log
+     * @param leaderCommit The last entry in the log that is committed by the leader
+     * @return A RaftMessage that can will be sent to all peer nodes requesting that they add thee sent entries to their
+     * log
+     */
     public static RaftMessage appendRequest(int term, int leaderId, int prevLogIndex, int prevLogTerm, List<LogEntry> entries, int leaderCommit) {
         return new RaftMessage(MessageType.APPEND_REQUEST, term, leaderId, prevLogIndex, prevLogTerm, entries, null, leaderCommit, null, null, null, null, null);
     }
 
+    /**
+     * Creates a RaftMessage that will be sent after a appendRequest is received, acknowledging whether or not the
+     * entries were added to the log.
+     * @param term The node's current election term
+     * @param success whether or not the addition was successful
+     * @return A RaftMessage to respond to an appendRequest message
+     */
     public static RaftMessage appendResponse(int term, boolean success) {
         return new RaftMessage(MessageType.APPEND_RESPONSE, term, null, null, null, null, null, null, null, null, null, success, null);
     }
 
+    /**
+     * Creates a RaftMessage to send to the leader node to update the log
+     * @param entry the log entry to be added to the log
+     * @return A RaftMessage to send to the leader node to append to the log
+     */
     public static RaftMessage chatMessage(LogEntry entry) {
         return new RaftMessage(MessageType.CHAT_MESSAGE, null, null, null, null, null, entry, null, null, null, null, null, null);
     }
@@ -133,7 +171,7 @@ public class RaftMessage {
                 int lastLogTerm = in.readInt();
                 return RaftMessage.voteRequest(term, candidateId, lastLogIndex, lastLogTerm);
             }
-            case VOTE_RESOPNSE: {
+            case VOTE_RESPONSE: {
                 int term = in.readInt();
                 boolean voteGranted = in.readBoolean();
                 return RaftMessage.voteResponse(term, voteGranted);
@@ -185,7 +223,7 @@ public class RaftMessage {
                     out.writeInt(lastLogTerm);
                     break;
                 }
-                case VOTE_RESOPNSE: {
+                case VOTE_RESPONSE: {
                     out.writeInt(type.ordinal());
                     out.writeInt(term);
                     out.writeBoolean(voteGranted);
