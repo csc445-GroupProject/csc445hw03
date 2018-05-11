@@ -1,36 +1,32 @@
 package edu.oswego.cs.ytsync.client;
 
 
-import com.sapher.youtubedl.YoutubeDL;
-import com.sapher.youtubedl.YoutubeDLException;
-import com.sapher.youtubedl.YoutubeDLRequest;
-import com.sapher.youtubedl.YoutubeDLResponse;
 import edu.oswego.cs.ytsync.client.components.ConnectDialog;
-import edu.oswego.cs.ytsync.common.ConnectPacket;
 import edu.oswego.cs.ytsync.common.raft.RaftMessageBuffer;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.util.Duration;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class ClientApp extends Application {
+    String username;
+    Socket server;
     private TextField chatField;
     private TextArea chatArea;
     private ChatServer chatServer;
-    String username;
-    Socket server;
 
     public static void main(String args[]) {
         launch(args);
@@ -44,9 +40,9 @@ public class ClientApp extends Application {
 
             int port = Integer.parseInt(m.get("port"));
 
-            chatServer = new ChatServer("google.com", addr, port, new ArrayList<>(), chatArea);
+            chatServer = new ChatServer(addr, port, new ArrayList<>(), chatArea);
 
-            new Thread(chatServer).run();
+            new Thread(chatServer).start();
 
             try {
                 server = new Socket(addr, port);
@@ -62,7 +58,7 @@ public class ClientApp extends Application {
 
                     while (true) {
                         int available = in.available();
-                        if(available > 0) {
+                        if (available > 0) {
                             int size = in.read(bytes);
                             buffer.addToBuffer(bytes, size);
 
@@ -75,7 +71,7 @@ public class ClientApp extends Application {
                                     hostnames.addAll(buffer.next().getHostnames());
                                 }
 
-                                for(String h : hostnames) {
+                                for (String h : hostnames) {
                                     System.out.printf("%s\n", h);
                                 }
 
@@ -96,11 +92,26 @@ public class ClientApp extends Application {
             Button sendButton = new Button("Send");
             HBox inputBox = new HBox(10, chatField, sendButton);
 
+            sendButton.setOnMouseClicked(me -> {
+                sendInput();
+            });
+
+            chatField.setOnKeyPressed(ke -> {
+                if (ke.getCode() == KeyCode.ENTER)
+                    sendInput();
+            });
+
             VBox root = new VBox(10, chatArea, inputBox);
             root.setPadding(new Insets(10, 10, 10, 10));
             primaryStage.setScene(new Scene(root));
             chatField.requestFocus();
             primaryStage.show();
         });
+    }
+
+    private void sendInput() {
+        String message = chatField.getText().trim();
+        chatServer.getNewMessageFromConnectedClient(username, message);
+        chatField.clear();
     }
 }
